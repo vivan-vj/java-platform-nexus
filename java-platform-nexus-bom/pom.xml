@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        Platform BOM — single source of truth for all managed dependency versions.
+
+        Consumption models:
+          1. Inherited automatically when using java-platform-nexus-parent.
+          2. Imported directly in any project's dependencyManagement section:
+
+             <dependencyManagement>
+               <dependencies>
+                 <dependency>
+                   <groupId>com.example.platform</groupId>
+                   <artifactId>java-platform-nexus-bom</artifactId>
+                   <version>1.0.0-SNAPSHOT</version>
+                   <type>pom</type>
+                   <scope>import</scope>
+                 </dependency>
+               </dependencies>
+             </dependencyManagement>
+
+        IMPORTANT: Importing this BOM does NOT inherit plugin configuration,
+        compiler settings, build properties, or Enforcer rules from
+        java-platform-nexus-parent.
+    -->
+
+    <parent>
+        <groupId>com.example.platform</groupId>
+        <artifactId>java-platform-nexus</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>java-platform-nexus-bom</artifactId>
+    <packaging>pom</packaging>
+
+    <name>java-platform-nexus-bom</name>
+    <description>
+        Platform Bill of Materials. Manages dependency versions for all
+        supported libraries. Import this BOM to gain version management
+        without inheriting build configuration.
+    </description>
+
+    <!--
+        ============================================================
+        VERSION PROPERTIES
+        All upstream BOM and standalone dependency versions are
+        declared here. Change a version in one place to upgrade
+        across the entire platform.
+
+        Baseline: Spring Boot 3.3.x + Java 17/21
+        See docs/compatibility-matrix.md before upgrading.
+        ============================================================
+    -->
+    <properties>
+        <!-- ── Spring ── -->
+        <spring-boot.version>3.3.4</spring-boot.version>
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <spring-ai.version>1.0.0-M3</spring-ai.version>
+
+        <!-- ── Database ── -->
+        <mysql-connector.version>8.4.0</mysql-connector.version>
+        <postgresql.version>42.7.4</postgresql.version>
+        <flyway.version>10.18.0</flyway.version>
+        <liquibase.version>4.29.2</liquibase.version>
+
+        <!-- ── Cloud — Azure ── -->
+        <azure-sdk-bom.version>1.2.27</azure-sdk-bom.version>
+        <spring-cloud-azure.version>5.17.0</spring-cloud-azure.version>
+
+        <!-- ── Cloud — AWS ── -->
+        <aws-sdk-v2-bom.version>2.28.3</aws-sdk-v2-bom.version>
+        <spring-cloud-aws.version>3.2.1</spring-cloud-aws.version>
+
+        <!-- ── Observability ── -->
+        <opentelemetry-bom.version>1.42.1</opentelemetry-bom.version>
+        <opentelemetry-instrumentation-bom.version>2.9.0</opentelemetry-instrumentation-bom.version>
+
+        <!-- ── Testing ── -->
+        <testcontainers.version>1.20.2</testcontainers.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!--
+                ════════════════════════════════════════════════════
+                UPSTREAM BOM IMPORTS
+
+                Import order determines precedence when two BOMs
+                manage the same artifact. First declaration wins.
+
+                Precedence (highest → lowest):
+                  1. Explicit overrides declared below this block
+                  2. spring-boot-dependencies
+                  3. spring-cloud-dependencies
+                  4. spring-ai-bom
+                  5. azure-sdk-bom
+                  6. spring-cloud-azure-dependencies
+                  7. software.amazon.awssdk:bom
+                  8. spring-cloud-aws-dependencies
+                  9. opentelemetry-bom
+                 10. opentelemetry-instrumentation-bom
+
+                See docs/dependency-policy.md for full conflict
+                resolution policy.
+                ════════════════════════════════════════════════════
+            -->
+
+            <!-- 1. Spring Boot BOM — highest precedence for Spring artifacts -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 2. Spring Cloud BOM — compatible release train for Spring Boot 3.3.x -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!--
+                3. Spring AI BOM
+                Requires Spring Boot 3.3+ and Java 17+.
+                Managed here but NOT added to consuming apps by default.
+                Add the desired starter (e.g. spring-ai-openai-spring-boot-starter)
+                explicitly in your application POM.
+            -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 4. Azure SDK BOM -->
+            <dependency>
+                <groupId>com.azure</groupId>
+                <artifactId>azure-sdk-bom</artifactId>
+                <version>${azure-sdk-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 5. Spring Cloud Azure BOM — requires Spring Boot 3.x -->
+            <dependency>
+                <groupId>com.azure.spring</groupId>
+                <artifactId>spring-cloud-azure-dependencies</artifactId>
+                <version>${spring-cloud-azure.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 6. AWS SDK v2 BOM -->
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws-sdk-v2-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 7. Spring Cloud AWS BOM — requires Spring Boot 3.x -->
+            <dependency>
+                <groupId>io.awspring.cloud</groupId>
+                <artifactId>spring-cloud-aws-dependencies</artifactId>
+                <version>${spring-cloud-aws.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 8. OpenTelemetry API/SDK BOM -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 9. OpenTelemetry Instrumentation BOM -->
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-bom</artifactId>
+                <version>${opentelemetry-instrumentation-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!--
+                ════════════════════════════════════════════════════
+                EXPLICIT VERSION OVERRIDES
+                Only listed here when NOT covered by an imported BOM
+                above, or when a specific version is required for a
+                documented compatibility or security reason.
+                ════════════════════════════════════════════════════
+            -->
+
+            <!--
+                MySQL Connector/J: spring-boot-dependencies manages this artifact.
+                Version pinned here to align with MySQL 8.x server requirement.
+                Remove this override if spring-boot-dependencies version is acceptable.
+            -->
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${mysql-connector.version}</version>
+            </dependency>
+
+            <!--
+                PostgreSQL JDBC: spring-boot-dependencies manages this artifact.
+                Explicit version ensures alignment with PostgreSQL 16.x server.
+            -->
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
+            </dependency>
+
+            <!--
+                Flyway: spring-boot-dependencies manages flyway-core.
+                Explicit versions for flyway-mysql and flyway-database-postgresql
+                ensure all Flyway modules stay on the same version.
+                Flyway 10.x requires Java 17+.
+            -->
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-mysql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+
+            <!--
+                Liquibase: spring-boot-dependencies manages liquibase-core.
+                Explicit version aligns with the Spring Boot 3.3.x tested combination.
+            -->
+            <dependency>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-core</artifactId>
+                <version>${liquibase.version}</version>
+            </dependency>
+
+            <!--
+                Testcontainers BOM: managed by spring-boot-dependencies since Boot 3.1.
+                Explicit version here allows platform-level override if a CVE fix
+                is needed before the next Spring Boot release.
+            -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+</project>
