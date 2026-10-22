@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        Platform Parent POM.
+        Recommended parent for new applications on this platform.
+
+        Provides:
+          - All dependency version management via BOM import
+          - Centralized Maven plugin version management (pluginManagement)
+          - Sensible build defaults (encoding, compiler release)
+          - Maven Enforcer rules (minimum Maven version, minimum JDK version)
+
+        Consuming application example:
+
+          <parent>
+            <groupId>com.example.platform</groupId>
+            <artifactId>java-platform-nexus-parent</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+          </parent>
+
+        Applications MAY override:
+          - java.version  (compiler release target, e.g. 21)
+          - Any plugin version declared in pluginManagement
+          - Any dependency version (with documented justification)
+
+        Applications must NOT override:
+          - spring-boot.version without a coordinated platform release
+          - Enforcer rules without team review
+    -->
+
+    <parent>
+        <groupId>com.example.platform</groupId>
+        <artifactId>java-platform-nexus</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>java-platform-nexus-parent</artifactId>
+    <packaging>pom</packaging>
+
+    <name>java-platform-nexus-parent</name>
+    <description>
+        Platform parent POM. Inherit this to gain dependency version management,
+        plugin defaults, and build conventions. Imports java-platform-nexus-bom.
+    </description>
+
+    <!--
+        ============================================================
+        BUILD PROPERTIES
+
+        java.version controls maven.compiler.release.
+        Default: 17 (minimum for Spring Boot 3.x).
+
+        To target Java 21, add to your application POM:
+          <properties>
+            <java.version>21</java.version>
+          </properties>
+
+        The JDK used to run Maven must be >= java.version.
+        See docs/compatibility-matrix.md for validated combinations.
+        ============================================================
+    -->
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+
+        <!-- Plugin versions — centralized here, never duplicated in the BOM -->
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.5.1</maven-failsafe-plugin.version>
+        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+        <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+    </properties>
+
+    <!--
+        Import the platform BOM.
+        All dependency versions flow from here.
+        No versions are duplicated between this file and java-platform-nexus-bom.
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.example.platform</groupId>
+                <artifactId>java-platform-nexus-bom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <!--
+            pluginManagement: defines versions and shared configuration.
+            Plugins here are NOT executed unless:
+              a) Maven's default lifecycle binds them (compiler, resources, jar, clean), or
+              b) The consuming application explicitly declares them in its <build><plugins>.
+        -->
+        <pluginManagement>
+            <plugins>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven-clean-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven-resources-plugin.version}</version>
+                    <configuration>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <!--
+                            maven.compiler.release enforces source, target, and
+                            bootstrap classpath in a single flag (requires Java 9+).
+                            Controlled by the java.version property above.
+                        -->
+                        <release>${maven.compiler.release}</release>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <!-- Required for JUnit 5 with Surefire 3.x on the classpath -->
+                        <useModulePath>false</useModulePath>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-failsafe-plugin.version}</version>
+                </plugin>
+
+                <!--
+                    Maven Enforcer: validates build environment constraints.
+                    Activated in the <build><plugins> section below.
+                    Consuming applications may add rules but must not remove
+                    platform-mandated rules without team review.
+                -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>${maven-enforcer-plugin.version}</version>
+                    <configuration>
+                        <rules>
+                            <requireMavenVersion>
+                                <version>[${maven.minimum.version},)</version>
+                                <message>Maven ${maven.minimum.version} or higher is required.</message>
+                            </requireMavenVersion>
+                            <requireJavaVersion>
+                                <version>[${java.version},)</version>
+                                <message>JDK ${java.version} or higher is required to build this project.</message>
+                            </requireJavaVersion>
+                            <banDuplicatePomDependencyVersions/>
+                        </rules>
+                        <fail>true</fail>
+                    </configuration>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+
+        <!--
+            Plugins declared here execute for ALL consuming applications.
+            Keep this list minimal — only Enforcer is activated here.
+            All other plugins run via Maven's default lifecycle binding.
+        -->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>platform-enforce</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+    </build>
+
+</project>

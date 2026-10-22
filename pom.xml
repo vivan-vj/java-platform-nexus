@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        Root reactor aggregator.
+        Purpose : build all platform modules together in the correct order.
+        NOT intended as a parent for consuming applications.
+        Consuming applications reference either:
+          - java-platform-nexus-parent  (parent inheritance)
+          - java-platform-nexus-bom     (BOM import only)
+    -->
+
+    <groupId>com.example.platform</groupId>
+    <artifactId>java-platform-nexus</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>java-platform-nexus</name>
+    <description>
+        Centralized Maven platform providing dependency version management,
+        build plugin configuration, and Java compatibility baselines for
+        enterprise Spring Boot applications.
+    </description>
+
+    <properties>
+        <maven.minimum.version>3.9.0</maven.minimum.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <modules>
+        <module>java-platform-nexus-bom</module>
+        <module>java-platform-nexus-parent</module>
+    </modules>
+
+    <!--
+        Configure for your target repository before publishing.
+        Options:
+          - Maven Central via Sonatype OSSRH (requires GPG signing)
+          - Private Nexus / Artifactory instance
+        Set platform.releases.url and platform.snapshots.url in
+        your ~/.m2/settings.xml or CI environment.
+    -->
+    <distributionManagement>
+        <repository>
+            <id>platform-releases</id>
+            <url>${platform.releases.url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>platform-snapshots</id>
+            <url>${platform.snapshots.url}</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+</project>
